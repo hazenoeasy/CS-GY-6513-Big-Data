@@ -8,6 +8,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 /**
  * @author Yuh Z
@@ -20,18 +21,29 @@ public class testFileReading {
 
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 
-        if (otherArgs.length != 4) {
-            System.err.println("Usage: gram <n> <in_dir> <count_dir> <prob_dir> ");
+        if (otherArgs.length != 3) {
+            System.err.println("Usage: gram <in_dir> <count_dir> <prob_dir> ");
             System.exit(2);
         }
+        String[] split = getCount(conf, otherArgs[2]);
+        System.out.println(split);
+    }
+
+    private static String[] getCount(Configuration conf, String path) throws IOException {
+        String[] result = new String[3];
         FileSystem fs = FileSystem.get(conf);
-        Path file = new Path(otherArgs[3] + "/part-r-00000");
-        FSDataInputStream fsDataInputStream = fs.open(file);
-        byte[] buf = new byte[1024];
-        int readLen = fsDataInputStream.read(buf);
-         fsDataInputStream.close();
-        String s = new String(buf, 0, readLen);
-        System.out.println(Integer.valueOf(s.trim()));
-        System.out.println(s);
+        for (int i = 0; i < 3; i++) {
+            Path file = new Path(path + "/part-r-0000" + i);
+            FSDataInputStream fsDataInputStream = fs.open(file);
+            byte[] buf = new byte[1024];
+            int readLen = fsDataInputStream.read(buf);
+            fsDataInputStream.close();
+            String s = new String(buf, 0, readLen);
+            String[] split = s.trim().split("\t");
+            Integer index = Integer.valueOf(split[0].trim());
+            String count = split[1].trim();
+            result[index - 1] = count;
+        }
+        return result;
     }
 }
